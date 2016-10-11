@@ -1,13 +1,30 @@
-# file: tasks/install.yml -- install postgresql packages
+# file: roles/install-postgresql-on-el6/tasks/install.yml -- install postgresql packages
 
-- name: "Stage 1: install PostgreSQL on RedHat/CentOS"
-  include: 'install_rhel.yml'
-  when: ansible_os_family == 'RedHat'
+- name: "Display Installation Environments"
+  debug: msg="Debugging Installation Environments {{ ansible_distribution }} {{ postgresql_version }} {{ el_version }}"
 
-- name: "Stage 1: install PostgreSQL on Debian/Ubuntu"
-  include: 'install_deb.yml'
-  when: ansible_os_family == 'Debian'
+- name: "Debugging repo items"
+  debug: msg="{{ item.repo }}"
+  when: item.version == "{{ postgresql_version }}"
+  with_items: "{{ vars ['postgresql_repo_' + ansible_distribution] }}"
 
-- name: 'Stage 1: install Ansible postgresql dependency package'
-  package: state='latest' pkg='python-psycopg2'
+- name: "Stage 1: install repository package"
+  yum:
+    state: present
+    pkg: "{{ item.repo }}"
+  when: item.version == "{{ postgresql_version }}"
+  with_items: "{{ vars ['postgresql_repo_' + ansible_distribution] }}"
 
+- name: "Stage 1: install postgresql packages"
+  yum:
+    state: latest
+    pkg: "{{ item }}"
+  with_items:
+    - postgresql{{ postgresql_version |replace('.', '') }}-server
+    - python-psycopg2
+
+- name: "Stage 1: install postgresql contrib package"
+  yum:
+    state: latest
+    pkg: postgresql{{ postgresql_version |replace('.', '') }}-contrib
+  when: postgresql_contrib

@@ -1,0 +1,29 @@
+# file: install-postgresql-sr-on-el6/tasks/main.yml -- root task with pre-flight check and which includes other
+
+- name: Include vars for postgres installation
+  include_vars: 'repo.yml'
+
+- name: Check OS support
+  fail: msg="The following OS family {{ ansible_os_family }} {{ ansible_architecture }} is not supported"
+  when: not ansible_os_family == "RedHat" or not ansible_architecture == "x86_64"
+
+- name: Display OS support
+  debug: msg="Debugging OS family {{ ansible_os_family }} {{ ansible_architecture }}"
+
+- name: Check package manager support
+  fail: msg="The following package manager {{ ansible_pkg_mgr }} is not supported"
+  when: not ansible_pkg_mgr == "yum"
+
+- name: Display Package Manager support
+  debug: msg="Debugging Package Manager {{ ansible_pkg_mgr }}"
+
+- include: install.yml
+
+- include: configure-{{ postgres_db_mode }}.yml
+  when: postgres_db_mode == "master"
+
+- include: users.yml
+  when: postgres_db_mode == "master"
+
+- include: databases.yml
+  when: postgres_db_mode == "master"

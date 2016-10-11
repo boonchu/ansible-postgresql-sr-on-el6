@@ -5,7 +5,8 @@
   when: postgresql_drop_old_cluster
 
 - name: "Stage 2: remove old postgresql cluster"
-  file: path="{{ postgresql_data_dir }}" state=absent
+  # file: path="{{ postgresql_data_dir }}" state=absent
+  command: "rm -rf /var/lib/pgsql/{{ postgresql_version }}/data {{ postgresql_cluster_symlink_src }}"
   when: postgresql_drop_old_cluster
 
 - name: "Stage 2: cluster directory replacement with symlink, check destination directory"
@@ -26,11 +27,11 @@
     group: "{{ postgresql_admin_user }}"
   when: postgresql_cluster_symlink_src|length > 0
 
-- name: "Stage 2: check cluster directory"
-  stat: path={{ postgresql_data_dir }}
+- name: "Stage 2: check cluster directory {{ postgresql_data_dir }}"
+  stat: path="{{ postgresql_data_dir }}"
   register: postgresql_data_stat
 
-- name: "Stage 2: initialize new postgresql cluster"
+- name: "Stage 2: initialize new postgresql cluster {{ postgresql_admin_user }} {{ postgresql_exec_dir }}/initdb -D {{ postgresql_data_dir }}"
   sudo: yes
   sudo_user: "{{ postgresql_admin_user }}"
   command: "{{ postgresql_exec_dir }}/initdb -D {{ postgresql_data_dir }}"
